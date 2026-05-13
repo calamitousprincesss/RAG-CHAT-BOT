@@ -1,0 +1,13 @@
+<footer class="appfooter">
+  <div class="footer-left">
+    © 2026 {{ APP_NAME }} · v{{ APP_VERSION }}
+  </div>
+  <div class="footer-right">
+    <span class="chip"><span class="status-dot {{ 'on' if LANGFUSE_ENABLED else 'off' }}"></span>Langfuse</span>
+    <span class="chip"><span class="status-dot on"></span>FAISS</span>
+    <span class="chip"><span class="status-dot on"></span>Embedder</span>
+    <span class="chip"><span class="status-dot on"></span>LLM: {{ LLM_ACTIVE.provider }}{% if LLM_ACTIVE.model %} · {{ LLM_ACTIVE.model }}{% endif %}</span>
+    <a href="/healthz" target="_blank">API</a>
+    <a href="https://github.com" target="_blank">Docs</a>
+  </div>
+</footer>

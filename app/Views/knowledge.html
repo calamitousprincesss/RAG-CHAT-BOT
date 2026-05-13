@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}Knowledge Store · {{ APP_NAME }}{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">
+  <a href="/">Home</a> <span class="material-symbols-outlined">chevron_right</span>
+  <span>Knowledge Store</span>
+</nav>
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Knowledge Store</h1>
+    <p class="page-sub">All ingested documents and their vector chunks. Click a row for chunk preview.</p>
+  </div>
+  <a href="{{ url_for('upload.page') }}" class="btn btn-primary">
+    <span class="material-symbols-outlined">add</span> Add document
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="kpi-row">
+  <div class="kpi-card"><div class="kpi-label">Documents</div><div class="kpi-value">{{ stats.docs }}</div><span class="material-symbols-outlined kpi-icon">description</span></div>
+  <div class="kpi-card"><div class="kpi-label">Chunks</div><div class="kpi-value">{{ stats.chunks }}</div><span class="material-symbols-outlined kpi-icon">grid_view</span></div>
+  <div class="kpi-card"><div class="kpi-label">Queries</div><div class="kpi-value">{{ chat_count }}</div><span class="material-symbols-outlined kpi-icon">forum</span></div>
+  <div class="kpi-card"><div class="kpi-label">Avg latency</div><div class="kpi-value">{{ avg_latency }} ms</div><span class="material-symbols-outlined kpi-icon">speed</span></div>
+</div>
+
+<section class="card" x-data="kbTable()">
+  <header class="card-header">
+    <h3>Documents</h3>
+    <div class="card-actions">
+      <input class="input small" placeholder="Filter by name…" x-model="filter" />
+      <button class="btn btn-ghost" @click="refresh()"><span class="material-symbols-outlined">refresh</span></button>
+    </div>
+  </header>
+  <div class="card-body p0">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:30px"><input type="checkbox" /></th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Chunks</th>
+          <th>Size</th>
+          <th>Created</th>
+          <th style="width:90px">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="d in filtered()" :key="d.id">
+          <tr>
+            <td><input type="checkbox" /></td>
+            <td>
+              <a href="#" @click.prevent="preview(d.id)" class="cell-link">
+                <span class="material-symbols-outlined small">description</span>
+                <span x-text="d.filename"></span>
+              </a>
+            </td>
+            <td><span class="chip" x-text="d.file_type"></span></td>
+            <td x-text="d.chunk_count"></td>
+            <td x-text="(d.size_bytes/1024).toFixed(1) + ' KB'"></td>
+            <td class="muted" x-text="d.created_at.replace('T',' ').slice(0,19)"></td>
+            <td>
+              <button class="icon-btn small" @click="preview(d.id)" title="Preview">
+                <span class="material-symbols-outlined">visibility</span>
+              </button>
+              <button class="icon-btn small danger" @click="del(d.id, d.filename)" title="Delete">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            </td>
+          </tr>
+        </template>
+        <tr x-show="docs.length === 0">
+          <td colspan="7" class="empty">
+            <span class="material-symbols-outlined large">folder_open</span>
+            <div>No documents yet.</div>
+            <a href="{{ url_for('upload.page') }}" class="btn btn-primary mt">Upload your first document</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<aside class="drawer" :class="drawerOpen ? 'open' : ''" x-data="{}">
+  <header class="drawer-head">
+    <h3 id="drawer-title">Chunks</h3>
+    <button class="icon-btn" @click="drawerOpen=false">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </header>
+  <div class="drawer-body" id="drawer-body">Loading…</div>
+</aside>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function kbTable() {
+  return {
+    docs: {{ documents | tojson }},
+    filter: '',
+    drawerOpen: false,
+    filtered() {
+      const f = this.filter.toLowerCase();
+      return this.docs.filter(d => !f || d.filename.toLowerCase().includes(f));
+    },
+    async refresh() {
+      const r = await fetch('/knowledge/api/list').then(r=>r.json());
+      this.docs = r.documents;
+    },
+    async preview(id) {
+      this.drawerOpen = true;
+      document.getElementById('drawer-body').innerHTML = 'Loading…';
+      const r = await fetch('/knowledge/api/' + id).then(r=>r.json());
+      if (!r.ok) { document.getElementById('drawer-body').innerHTML = 'Not found.'; return; }
+      document.getElementById('drawer-title').innerText = r.document.filename + ' (' + r.chunks.length + ' chunks)';
+      document.getElementById('drawer-body').innerHTML = r.chunks.map((c,i) =>
+        `<div class="chunk-card">
+           <div class="chunk-head"><b>Chunk ${c.metadata.chunk_idx}</b><span class="mono small">${c.id}</span></div>
+           <div class="chunk-body">${escapeHtml(c.text)}</div>
+         </div>`).join('') || '<div class="muted">No chunks.</div>';
+    },
+    async del(id, name) {
+      if (!confirm('Delete "' + name + '" and all its vectors?')) return;
+      const r = await fetch('/knowledge/api/' + id, {method:'DELETE'}).then(r=>r.json());
+      if (r.ok) {
+        this.docs = this.docs.filter(d => d.id !== id);
+        window.toast('✓ Removed ' + r.vectors_removed + ' vectors');
+      }
+    }
+  }
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+</script>
+{% endblock %}

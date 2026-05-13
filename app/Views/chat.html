@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}Chatbot · {{ APP_NAME }}{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">
+  <a href="/">Home</a> <span class="material-symbols-outlined">chevron_right</span>
+  <span>Chatbot</span>
+</nav>
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Chatbot</h1>
+    <p class="page-sub">Ask questions about your knowledge base. Toggle between raw vector search and AI-enhanced retrieval.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div x-data="chatApp()" class="chat-layout">
+  <section class="card chat-card">
+    <header class="card-header">
+      <h3>Conversation</h3>
+      <div class="card-actions">
+        <div class="seg-control">
+          <label :class="strategy==='A' ? 'active' : ''">
+            <input type="radio" value="A" x-model="strategy" /> Raw (A)
+          </label>
+          <label :class="strategy==='B' ? 'active' : ''">
+            <input type="radio" value="B" x-model="strategy" /> AI-Enhanced (B)
+          </label>
+        </div>
+        <label class="inline">Top-K
+          <select class="input small" x-model="topK">
+            <option>1</option><option>3</option><option>5</option><option>10</option>
+          </select>
+        </label>
+        <button class="btn btn-ghost" @click="reset()"><span class="material-symbols-outlined">refresh</span> New</button>
+      </div>
+    </header>
+
+    <div class="card-body chat-stream" id="stream">
+      <template x-for="(t,i) in turns" :key="i">
+        <div :class="'turn turn-' + t.role">
+          <div class="turn-avatar" x-text="t.role==='user' ? 'You' : '🤖'"></div>
+          <div class="turn-body">
+            <div class="turn-content" x-html="t.html"></div>
+            <template x-if="t.expanded">
+              <div class="expanded-row">
+                <span class="material-symbols-outlined small">auto_awesome</span>
+                <span class="muted">Expanded:</span>
+                <code x-text="t.expanded"></code>
+              </div>
+            </template>
+            <template x-if="t.sources && t.sources.length">
+              <div class="sources">
+                <div class="sources-title">Sources</div>
+                <template x-for="s in t.sources" :key="s.chunk_id">
+                  <div class="src">
+                    <span class="material-symbols-outlined small">description</span>
+                    <span class="src-name" x-text="s.source"></span>
+                    <span class="src-score" x-text="'sim ' + s.score"></span>
+                    <div class="src-preview muted" x-text="s.text"></div>
+                  </div>
+                </template>
+              </div>
+            </template>
+            <template x-if="t.timings">
+              <div class="timings muted small">
+                <span x-text="t.strategy === 'B' ? 'expand+embed ' + t.timings.embedding_ms + 'ms' : 'embed ' + t.timings.embedding_ms + 'ms'"></span> ·
+                <span x-text="'search ' + t.timings.retrieval_ms + 'ms'"></span> ·
+                <span x-text="'generate ' + t.timings.generation_ms + 'ms'"></span> ·
+                <b x-text="'total ' + t.latency_ms + 'ms'"></b>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+      <div class="turn turn-bot" x-show="loading">
+        <div class="turn-avatar">🤖</div>
+        <div class="turn-body"><div class="typing"><span></span><span></span><span></span></div></div>
+      </div>
+      <div class="empty" x-show="turns.length===0 && !loading">
+        <span class="material-symbols-outlined large">chat</span>
+        <div>Ask anything about your knowledge base.</div>
+        <div class="muted small">Try: "How does the system handle peak load?"</div>
+      </div>
+    </div>
+
+    <div class="chat-input">
+      <input class="input" placeholder="Ask anything about your knowledge base…"
+             x-model="query" @keydown.enter="send()" />
+      <button class="btn btn-primary" @click="send()" :disabled="loading || !query.trim()">
+        <span class="material-symbols-outlined">send</span> Send
+      </button>
+    </div>
+  </section>
+
+  <aside class="chat-side">
+    <section class="card">
+      <header class="card-header"><h3>Stats</h3></header>
+      <div class="card-body stats-list">
+        <div class="stat-row"><span>Documents</span><b>{{ stats.docs }}</b></div>
+        <div class="stat-row"><span>Chunks</span><b>{{ stats.chunks }}</b></div>
+        <div class="stat-row"><span>Embedding</span><b class="mono small">MiniLM-L6 / 384</b></div>
+        <div class="stat-row"><span>Vector DB</span><b>FAISS (IndexFlatIP)</b></div>
+        <div class="stat-row"><span>Metric</span><b>cosine</b></div>
+      </div>
+    </section>
+    <section class="card">
+      <header class="card-header"><h3>Recent</h3></header>
+      <div class="card-body recent-list">
+        {% for r in recent %}
+        <div class="recent-item">
+          <div class="recent-q">{{ r.query[:60] }}</div>
+          <div class="recent-meta muted small">{{ r.strategy }} · {{ r.latency_ms | round(0) }}ms · {{ r.created_at[:19] }}</div>
+        </div>
+        {% else %}
+        <div class="muted">No history yet.</div>
+        {% endfor %}
+      </div>
+    </section>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function chatApp(){
+  return {
+    query: '', strategy: 'B', topK: 3, loading: false, turns: [],
+    reset(){ this.turns = []; },
+    async send(){
+      const q = this.query.trim();
+      if (!q || this.loading) return;
+      this.turns.push({role:'user', html: escapeHtml(q)});
+      this.query = ''; this.loading = true;
+      this.$nextTick(()=>this.scrollDown());
+      try {
+        const r = await fetch('/chat/ask', {
+          method:'POST', headers:{'content-type':'application/json'},
+          body: JSON.stringify({query:q, strategy:this.strategy, top_k:Number(this.topK)})
+        }).then(r=>r.json());
+        if (!r.ok) throw new Error(r.error || 'failed');
+        this.turns.push({
+          role:'bot', html: escapeHtml(r.answer),
+          sources: r.sources, expanded: r.expanded_query,
+          timings: r.timings, latency_ms: r.latency_ms, strategy: r.strategy
+        });
+      } catch(e) {
+        this.turns.push({role:'bot', html: '<span class="danger">Error: '+e.message+'</span>'});
+      } finally {
+        this.loading = false;
+        this.$nextTick(()=>this.scrollDown());
+      }
+    },
+    scrollDown(){
+      const el = document.getElementById('stream');
+      if (el) el.scrollTop = el.scrollHeight;
+    }
+  }
+}
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+</script>
+{% endblock %}

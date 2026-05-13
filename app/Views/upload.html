@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Upload · {{ APP_NAME }}{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">
+  <a href="/">Home</a> <span class="material-symbols-outlined">chevron_right</span>
+  <span>Upload Data</span>
+</nav>
+<h1 class="page-title">Upload to Knowledge Store</h1>
+<p class="page-sub">Add files or paste raw text. Content is chunked, embedded with sentence-transformers, and indexed in FAISS for cosine similarity search.</p>
+{% endblock %}
+
+{% block content %}
+<div class="kpi-row">
+  <div class="kpi-card"><div class="kpi-label">Documents</div><div class="kpi-value">{{ stats.docs }}</div><span class="material-symbols-outlined kpi-icon">description</span></div>
+  <div class="kpi-card"><div class="kpi-label">Chunks</div><div class="kpi-value">{{ stats.chunks }}</div><span class="material-symbols-outlined kpi-icon">grid_view</span></div>
+  <div class="kpi-card"><div class="kpi-label">Size</div><div class="kpi-value">{{ (stats.bytes / 1024) | round(1) }} KB</div><span class="material-symbols-outlined kpi-icon">storage</span></div>
+  <div class="kpi-card"><div class="kpi-label">Supported</div><div class="kpi-value mono small">{{ supported }}</div><span class="material-symbols-outlined kpi-icon">verified</span></div>
+</div>
+
+<div class="grid-2">
+  <section class="card" x-data="uploadFile()">
+    <header class="card-header"><h3>Upload file</h3></header>
+    <div class="card-body">
+      <label class="dropzone" :class="dragging ? 'dragging' : ''"
+             @dragover.prevent="dragging=true"
+             @dragleave.prevent="dragging=false"
+             @drop.prevent="dragging=false; handle($event.dataTransfer.files[0])">
+        <input type="file" hidden @change="handle($event.target.files[0])"
+               accept=".txt,.md,.pdf,.docx" />
+        <span class="material-symbols-outlined dz-icon">cloud_upload</span>
+        <div class="dz-title">Drop file here or click to browse</div>
+        <div class="dz-sub">{{ supported }} · max 32MB</div>
+      </label>
+      <div class="status" x-show="status" x-text="status"></div>
+      <div class="progress" x-show="loading"><div class="bar"></div></div>
+    </div>
+  </section>
+
+  <section class="card" x-data="pasteText()">
+    <header class="card-header"><h3>Paste raw text</h3></header>
+    <div class="card-body">
+      <input class="input" placeholder="Source name (e.g. 'runbook v3')" x-model="source" />
+      <textarea class="textarea" rows="9" placeholder="Paste technical content here…" x-model="text"></textarea>
+      <div class="row">
+        <button class="btn btn-primary" @click="submit()" :disabled="loading || !text">
+          <span class="material-symbols-outlined">bolt</span> Ingest &amp; Embed
+        </button>
+        <span class="status" x-text="status"></span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<section class="card">
+  <header class="card-header">
+    <h3>How ingestion works</h3>
+  </header>
+  <div class="card-body pipeline">
+    <div class="step"><span class="step-num">1</span><div><b>Parse</b><div class="muted">.txt .md .pdf .docx → plain text</div></div></div>
+    <div class="step-arrow material-symbols-outlined">arrow_forward</div>
+    <div class="step"><span class="step-num">2</span><div><b>Chunk</b><div class="muted">500 tokens · 50 overlap · sentence-aware</div></div></div>
+    <div class="step-arrow material-symbols-outlined">arrow_forward</div>
+    <div class="step"><span class="step-num">3</span><div><b>Embed</b><div class="muted">all-MiniLM-L6-v2 · 384-dim · L2-normalized</div></div></div>
+    <div class="step-arrow material-symbols-outlined">arrow_forward</div>
+    <div class="step"><span class="step-num">4</span><div><b>Store</b><div class="muted">FAISS · IndexFlatIP · cosine</div></div></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function uploadFile() {
+  return {
+    dragging: false, loading: false, status: '',
+    async handle(file) {
+      if (!file) return;
+      this.loading = true; this.status = 'Uploading & embedding…';
+      const fd = new FormData(); fd.append('file', file);
+      const r = await fetch('/upload/file', {method:'POST', body: fd}).then(r=>r.json());
+      this.loading = false;
+      this.status = r.ok ? `✓ ${r.chunks} chunks embedded (${r.filename})` : `✗ ${r.error}`;
+      window.toast(this.status);
+    }
+  }
+}
+function pasteText() {
+  return {
+    text: '', source: 'pasted-text', loading: false, status: '',
+    async submit() {
+      this.loading = true; this.status = 'Embedding…';
+      const fd = new FormData(); fd.append('text', this.text); fd.append('source', this.source);
+      const r = await fetch('/upload/text', {method:'POST', body: fd}).then(r=>r.json());
+      this.loading = false;
+      this.status = r.ok ? `✓ ${r.chunks} chunks · ${r.chars} chars` : `✗ ${r.error}`;
+      if (r.ok) this.text = '';
+      window.toast(this.status);
+    }
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,54 @@
+<aside class="sidebar" :class="sidebar ? '' : 'collapsed'">
+  <nav class="nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Main</div>
+      <a class="nav-item {% if request.path.startswith('/upload') %}active{% endif %}" href="{{ url_for('upload.page') }}">
+        <span class="material-symbols-outlined">cloud_upload</span>
+        <span class="nav-label">Upload Data</span>
+      </a>
+      <a class="nav-item {% if request.path.startswith('/knowledge') %}active{% endif %}" href="{{ url_for('kb.page') }}">
+        <span class="material-symbols-outlined">database</span>
+        <span class="nav-label">Knowledge Store</span>
+      </a>
+      <a class="nav-item {% if request.path.startswith('/chat') %}active{% endif %}" href="{{ url_for('chat.page') }}">
+        <span class="material-symbols-outlined">chat</span>
+        <span class="nav-label">Chatbot</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Insights</div>
+      <a class="nav-item {% if request.path.startswith('/benchmark') %}active{% endif %}" href="{{ url_for('benchmark.page') }}">
+        <span class="material-symbols-outlined">analytics</span>
+        <span class="nav-label">Benchmark</span>
+      </a>
+      <a class="nav-item" href="{{ LANGFUSE_ENABLED and 'https://cloud.langfuse.com' or '#' }}" target="_blank">
+        <span class="material-symbols-outlined">timeline</span>
+        <span class="nav-label">Langfuse Traces</span>
+        <span class="status-dot {{ 'on' if LANGFUSE_ENABLED else 'off' }}"></span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">System</div>
+      <a class="nav-item" href="/healthz" target="_blank">
+        <span class="material-symbols-outlined">monitor_heart</span>
+        <span class="nav-label">Health</span>
+      </a>
+      <a class="nav-item {% if request.path.startswith('/settings') %}active{% endif %}" href="{{ url_for('settings.page') }}">
+        <span class="material-symbols-outlined">settings</span>
+        <span class="nav-label">Settings</span>
+      </a>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="avatar small">A</div>
+      <div class="user-meta nav-label">
+        <div class="user-name">anushka</div>
+        <div class="user-email">anushka.yng@gmail.com</div>
+      </div>
+    </div>
+  </div>
+</aside>

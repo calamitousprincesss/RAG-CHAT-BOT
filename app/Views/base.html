@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}{{ APP_NAME }}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}" />
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script>
+    (function(){
+      const t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+<body x-data="{ sidebar: localStorage.getItem('sidebar') !== 'collapsed' }"
+      :class="sidebar ? '' : 'sidebar-collapsed'">
+
+  {% include 'partials/header.html' %}
+  <div class="app-shell">
+    {% include 'partials/sidebar.html' %}
+    <main class="main">
+      <div class="main-inner">
+        {% block breadcrumb %}{% endblock %}
+        {% block content %}{% endblock %}
+      </div>
+      {% include 'partials/footer.html' %}
+    </main>
+  </div>
+
+  <div id="toast" class="toast" x-data="{}"></div>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

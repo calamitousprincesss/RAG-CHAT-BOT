@@ -1,0 +1,41 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.7, pytest-9.0.3, pluggy-1.6.0 -- C:\Users\DEL\Downloads\ragchatbot\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\DEL\Downloads\ragchatbot
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.13.0, cov-7.1.0
+collecting ... collected 18 items
+
+tests/test_chunker.py::test_chunk_short_text_single_chunk PASSED         [  5%]
+tests/test_chunker.py::test_chunk_long_text_multiple_chunks PASSED       [ 11%]
+tests/test_chunker.py::test_chunk_ids_are_unique PASSED                  [ 16%]
+tests/test_chunker.py::test_make_doc_id_unique PASSED                    [ 22%]
+tests/test_llm_provider.py::test_factory_default_returns_mock PASSED     [ 27%]
+tests/test_llm_provider.py::test_factory_available_has_mock PASSED       [ 33%]
+tests/test_llm_provider.py::test_mock_provider_generate PASSED           [ 38%]
+tests/test_llm_provider.py::test_mock_provider_rewrite_returns_string PASSED [ 44%]
+tests/test_mocks.py::test_text_embedding_model_from_pretrained_returns_instance PASSED [ 50%]
+tests/test_mocks.py::test_text_embedding_model_get_embeddings_shape PASSED [ 55%]
+tests/test_mocks.py::test_text_embedding_deterministic PASSED            [ 61%]
+tests/test_mocks.py::test_generative_model_returns_generation_response PASSED [ 66%]
+tests/test_mocks.py::test_generative_model_rewrite_adds_synonyms PASSED  [ 72%]
+tests/test_retrieval.py::test_ingest_creates_chunks PASSED               [ 77%]
+tests/test_retrieval.py::test_strategy_a_returns_results PASSED          [ 83%]
+tests/test_retrieval.py::test_strategy_b_expands_query PASSED            [ 88%]
+tests/test_retrieval.py::test_ask_returns_full_query_result PASSED       [ 94%]
+tests/test_retrieval.py::test_delete_removes_vectors PASSED              [100%]
+
+============================== warnings summary ===============================
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 18 passed, 3 warnings in 1.51s ========================
+

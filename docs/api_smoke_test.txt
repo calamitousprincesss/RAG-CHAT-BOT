@@ -1,0 +1,158 @@
+﻿API Smoke Test - Live Claude API
+Run: 2026-05-14 01:32:17
+Endpoint: POST http://127.0.0.1:5000/chat/ask
+Provider: anthropic / claude-haiku-4-5-20251001
+
+Health: {"chats":0,"documents":{"bytes":3178,"chunks":8,"docs":8},"langfuse":false,"status":"ok"}
+
+----------------------------------------------------------
+QUERY: How does the system handle peak load?
+STRATEGY: A
+LATENCY: 2471.96 ms (embed+expand 91.34ms / search 0.23ms / generate 2380.29ms)
+
+ANSWER:
+According to the provided context, the system handles peak load through the following mechanisms:
+
+1. **Horizontal auto-scaling with Kubernetes HPA**: New pods are automatically spun up from a warm pool when CPU utilization crosses 70% or when request latency p95 exceeds 300ms.
+
+2. **Predictive scaling**: The system pre-provisions capacity in advance during known traffic spikes, such as marketing campaigns.
+
+3. **Connection draining**: During scale-down, in-flight requests are allowed to complete before pods are terminated.
+
+SOURCES:
+  #1  auto_scaling.txt  sim=0.5135
+      The system handles peak load through horizontal auto-scaling powered by Kubernetes HPA. When CPU utilization crosses 70% or request latency p95 exceeds 300ms, new pods are spun up ...
+  #2  load_balancer.txt  sim=0.3939
+      Incoming traffic is distributed across regional load balancers operating at both L4 and L7. The L7 layer performs path-based routing, TLS termination, and weighted canary deploymen...
+  #3  rate_limiting.txt  sim=0.3641
+      APIs are protected by a tiered rate-limiting system using token-bucket and leaky-bucket algorithms. Anonymous traffic is capped per IP at 60 requests per minute, while authenticate...
+
+----------------------------------------------------------
+QUERY: How does the system handle peak load?
+STRATEGY: B
+EXPANDED: How does the system handle peak load? peak traffic management system scalability high traffic load balancing capacity planning resource allocation performance under load surge handling traffic spikes concurrent users maximum throughput auto-scaling elastic scaling distributed systems horizontal scaling vertical scaling load distribution queueing mechanisms bottleneck management system resilience stress testing capacity limits performance degradation graceful degradation failover mechanisms failsafe systems redundancy clustering load shedding throttling rate limiting connection pooling caching strategies database optimization network optimization infrastructure capacity peak demand management traffic shaping congestion control
+LATENCY: 14179.77 ms (embed+expand 7683.75ms / search 0.09ms / generate 6495.87ms)
+
+ANSWER:
+According to the provided context, the system handles peak load through the following mechanisms:
+
+1. **Horizontal Auto-Scaling**: The system uses Kubernetes HPA (Horizontal Pod Autoscaler) to spin up new pods from a warm pool when:
+   - CPU utilization crosses 70%, or
+   - Request latency p95 exceeds 300ms
+
+2. **Predictive Scaling**: A predictive scaler pre-provisions capacity during known traffic spikes, such as marketing campaigns.
+
+3. **Connection Draining**: During scale-down, connection draining ensures that in-flight requests complete before pods are terminated.
+
+SOURCES:
+  #1  auto_scaling.txt  sim=0.5127
+      The system handles peak load through horizontal auto-scaling powered by Kubernetes HPA. When CPU utilization crosses 70% or request latency p95 exceeds 300ms, new pods are spun up ...
+  #2  rate_limiting.txt  sim=0.4238
+      APIs are protected by a tiered rate-limiting system using token-bucket and leaky-bucket algorithms. Anonymous traffic is capped per IP at 60 requests per minute, while authenticate...
+  #3  load_balancer.txt  sim=0.4234
+      Incoming traffic is distributed across regional load balancers operating at both L4 and L7. The L7 layer performs path-based routing, TLS termination, and weighted canary deploymen...
+
+----------------------------------------------------------
+QUERY: What happens when too many users hit the API at once?
+STRATEGY: A
+LATENCY: 3834.64 ms (embed+expand 22.6ms / search 0.09ms / generate 3811.89ms)
+
+ANSWER:
+Based on the provided context, when too many users hit the API at once, several mechanisms work together to handle the surge:
+
+1. **Rate Limiting**: Anonymous traffic is capped at 60 requests per minute per IP, while authenticated users have per-key quotas based on their plan. Throttled clients receive a 429 response with a Retry-After header to enable polite client backoff.
+
+2. **Burst Credits**: The rate-limiting system uses token-bucket and leaky-bucket algorithms with burst credits that accumulate to absorb sudden spikes without starvation.
+
+3. **Auto-Scaling**: The system uses Kubernetes HPA to horizontally scale by spinning up new pods from a warm pool when CPU utilization crosses 70% or when request latency p95 exceeds 300ms. A predictive scaler can also pre-provision capacity during known traffic spikes.
+
+4. **Load Balancing**: Incoming traffic is distributed across regional load balancers at both L4 and L7 layers, with the L7 layer performing path-based routing to optimize traffic distribution across stateless nodes.
+
+These mechanisms work together to manage sudden increases in user traffic and prevent system overload.
+
+SOURCES:
+  #1  rate_limiting.txt  sim=0.6124
+      APIs are protected by a tiered rate-limiting system using token-bucket and leaky-bucket algorithms. Anonymous traffic is capped per IP at 60 requests per minute, while authenticate...
+  #2  load_balancer.txt  sim=0.2687
+      Incoming traffic is distributed across regional load balancers operating at both L4 and L7. The L7 layer performs path-based routing, TLS termination, and weighted canary deploymen...
+  #3  auto_scaling.txt  sim=0.2509
+      The system handles peak load through horizontal auto-scaling powered by Kubernetes HPA. When CPU utilization crosses 70% or request latency p95 exceeds 300ms, new pods are spun up ...
+
+----------------------------------------------------------
+QUERY: What happens when too many users hit the API at once?
+STRATEGY: B
+EXPANDED: What happens when too many concurrent users simultaneously request the API endpoint, causing high traffic volume and traffic spikes? How do rate limiting, throttling, request queuing, and API gateway load balancing handle excessive user requests? What are the consequences of API overload, server saturation, and reaching maximum concurrent connections? How does the system respond to denial of service conditions, request timeouts, HTTP 429 errors, and service degradation during peak load and traffic surges?
+LATENCY: 5924.54 ms (embed+expand 3166.3ms / search 0.09ms / generate 2758.07ms)
+
+ANSWER:
+Based on the provided context, when too many users hit the API at once, several mechanisms work together:
+
+1. **Rate Limiting**: Anonymous traffic is capped at 60 requests per minute per IP, while authenticated users have per-key quotas based on their plan. Throttled clients receive a 429 response with a Retry-After header to enable polite client backoff.
+
+2. **Burst Absorption**: Burst credits accumulate in the token-bucket and leaky-bucket algorithms to absorb sudden spikes without starvation.
+
+3. **Auto-scaling**: The system handles peak load through horizontal auto-scaling via Kubernetes HPA. When CPU utilization crosses 70% or request latency p95 exceeds 300ms, new pods are spun up from a warm pool. Additionally, a predictive scaler pre-provisions capacity during known traffic spikes such as marketing campaigns.
+
+4. **Load Distribution**: Incoming traffic is distributed across regional load balancers operating at L4 and L7 layers, with health checks removing unhealthy backends from rotation within 15 seconds.
+
+SOURCES:
+  #1  rate_limiting.txt  sim=0.6701
+      APIs are protected by a tiered rate-limiting system using token-bucket and leaky-bucket algorithms. Anonymous traffic is capped per IP at 60 requests per minute, while authenticate...
+  #2  load_balancer.txt  sim=0.3916
+      Incoming traffic is distributed across regional load balancers operating at both L4 and L7. The L7 layer performs path-based routing, TLS termination, and weighted canary deploymen...
+  #3  auto_scaling.txt  sim=0.3862
+      The system handles peak load through horizontal auto-scaling powered by Kubernetes HPA. When CPU utilization crosses 70% or request latency p95 exceeds 300ms, new pods are spun up ...
+
+----------------------------------------------------------
+QUERY: Explain the failover mechanism during outages.
+STRATEGY: A
+LATENCY: 2805.82 ms (embed+expand 30.94ms / search 0.08ms / generate 2774.75ms)
+
+ANSWER:
+Based on the provided context, here is the failover mechanism during outages:
+
+The primary database operates in a **multi-AZ configuration with synchronous replication** to a standby replica located in a separate availability zone. When an outage occurs, **automatic failover promotes the replica to primary within 30 seconds**, achieving an RTO (Recovery Time Objective) of under one minute.
+
+Additionally, the system maintains **cross-region replication with warm standbys** as part of disaster recovery procedures, supporting an RPO (Recovery Point Objective) of 5 minutes and an RTO of 30 minutes for more severe scenarios.
+
+At the load balancing layer, **health checks run at 5-second intervals** to detect unhealthy backends and remove them from rotation within 15 seconds, ensuring traffic is redirected away from failed nodes.
+
+SOURCES:
+  #1  database_failover.txt  sim=0.5181
+      The primary database operates in a multi-AZ configuration with synchronous replication to a standby replica in a separate availability zone. During an outage, automatic failover pr...
+  #2  disaster_recovery.txt  sim=0.4372
+      Disaster recovery procedures define an RPO of 5 minutes and an RTO of 30 minutes. Cross-region replication maintains warm standbys, and quarterly game-day exercises validate the fa...
+  #3  load_balancer.txt  sim=0.3599
+      Incoming traffic is distributed across regional load balancers operating at both L4 and L7. The L7 layer performs path-based routing, TLS termination, and weighted canary deploymen...
+
+----------------------------------------------------------
+QUERY: Explain the failover mechanism during outages.
+STRATEGY: B
+EXPANDED: failover mechanism outage recovery high availability redundancy switching backup systems disaster recovery failover process automatic failover manual failover failover testing failover strategy failover configuration failover time RTO RPO system downtime prevention service interruption mitigation primary secondary failover active passive failover load balancing failover health checks failover monitoring failover protocols failover automation infrastructure resilience business continuity failover architecture failover deployment failover best practices failover implementation failover management
+LATENCY: 6726.04 ms (embed+expand 2754.66ms / search 0.12ms / generate 3971.22ms)
+
+ANSWER:
+# Failover Mechanism During Outages
+
+Based on the provided context, the failover mechanism operates at multiple levels:
+
+## Database Level
+The primary database uses a **multi-AZ configuration with synchronous replication** to a standby replica in a separate availability zone. During an outage, **automatic failover promotes the replica to primary within 30 seconds**, achieving an RTO of under one minute. Point-in-time recovery is supported through continuous WAL archival.
+
+## Load Balancer Level
+Regional load balancers perform **health checks at 5-second intervals** to detect unhealthy backends. Unhealthy backends are **removed from rotation within 15 seconds**, allowing traffic to be redirected to healthy nodes. The system maintains **fully stateless routing** (except for stateful upload flows with sticky sessions), permitting traffic to be directed to any available node.
+
+## Incident Coordination
+Beyond technical failover, **incident commanders coordinate response via a runbook playbook with auto-paging to on-call engineers**, ensuring human oversight and response during failover events.
+
+## Overall Recovery Targets
+The disaster recovery procedures define an **RPO of 5 minutes and an RTO of 30 minutes**, with **cross-region replication maintaining warm standbys** and **quarterly game-day exercises validating the failover runbook**.
+
+SOURCES:
+  #1  disaster_recovery.txt  sim=0.6117
+      Disaster recovery procedures define an RPO of 5 minutes and an RTO of 30 minutes. Cross-region replication maintains warm standbys, and quarterly game-day exercises validate the fa...
+  #2  database_failover.txt  sim=0.5664
+      The primary database operates in a multi-AZ configuration with synchronous replication to a standby replica in a separate availability zone. During an outage, automatic failover pr...
+  #3  load_balancer.txt  sim=0.271
+      Incoming traffic is distributed across regional load balancers operating at both L4 and L7. The L7 layer performs path-based routing, TLS termination, and weighted canary deploymen...
+

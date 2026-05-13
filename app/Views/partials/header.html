@@ -1,0 +1,22 @@
+<header class="topbar">
+  <div class="topbar-left">
+    <button class="icon-btn" @click="sidebar = !sidebar; localStorage.setItem('sidebar', sidebar ? 'open' : 'collapsed')" aria-label="Toggle sidebar">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+    <a href="/" class="brand">
+      <span class="brand-logo material-symbols-outlined">psychology</span>
+      <span class="brand-text">{{ APP_NAME }}</span>
+    </a>
+  </div>
+  <div class="topbar-search">
+    <span class="material-symbols-outlined">search</span>
+    <input type="text" placeholder="Search documents, chunks, sessions…" />
+    <kbd>⌘K</kbd>
+  </div>
+  <div class="topbar-right">
+    <button class="icon-btn" id="theme-toggle" aria-label="Toggle theme">
+      <span class="material-symbols-outlined theme-icon-light">light_mode</span>
+      <span class="material-symbols-outlined theme-icon-dark">dark_mode</span>
+    </button>
+  </div>
+</header>

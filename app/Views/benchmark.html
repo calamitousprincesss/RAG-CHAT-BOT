@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Benchmark · {{ APP_NAME }}{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">
+  <a href="/">Home</a> <span class="material-symbols-outlined">chevron_right</span>
+  <span>Benchmark</span>
+</nav>
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Strategy A vs Strategy B</h1>
+    <p class="page-sub">Raw vector search vs AI-enhanced retrieval (query expansion via mocked Vertex GenerativeModel).</p>
+  </div>
+  <button class="btn btn-primary" id="run-btn">
+    <span class="material-symbols-outlined">play_arrow</span> Run benchmark
+  </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="card">
+  <header class="card-header"><h3>Benchmark queries</h3></header>
+  <div class="card-body">
+    <ol class="numbered">
+      {% for q in queries %}<li>{{ q }}</li>{% endfor %}
+    </ol>
+    <div class="muted small">Edit <code>app/Controllers/benchmark_controller.py · DEFAULT_QUERIES</code> to change.</div>
+  </div>
+</section>
+
+<div id="results"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('run-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true; btn.innerText = 'Running…';
+  const r = await fetch('/benchmark/run', {method:'POST'}).then(r=>r.json());
+  btn.disabled = false;
+  btn.innerHTML = '<span class="material-symbols-outlined">play_arrow</span> Run benchmark';
+  if (!r.ok) { window.toast('Failed'); return; }
+  window.toast('✓ Wrote ' + r.markdown_path);
+  renderResults(r.result);
+});
+
+function renderResults(data) {
+  const root = document.getElementById('results');
+  root.innerHTML = '';
+  data.queries.forEach((q, i) => {
+    const card = document.createElement('section');
+    card.className = 'card';
+    card.innerHTML = `
+      <header class="card-header">
+        <h3>Q${i+1}: ${escapeHtml(q.query)}</h3>
+      </header>
+      <div class="card-body">
+        <div class="muted small">Expanded query: <code>${escapeHtml(q.strategy_b.expanded_query)}</code></div>
+        <div class="grid-2 mt">
+          <div>
+            <h4>Strategy A — Raw</h4>
+            ${renderRanks(q.strategy_a.results)}
+            <div class="muted small mt">embed ${q.strategy_a.timings_ms.embed_ms.toFixed(1)}ms · search ${q.strategy_a.timings_ms.search_ms.toFixed(1)}ms</div>
+          </div>
+          <div>
+            <h4>Strategy B — AI-Enhanced</h4>
+            ${renderRanks(q.strategy_b.results)}
+            <div class="muted small mt">expand ${q.strategy_b.timings_ms.expand_ms.toFixed(1)}ms · embed ${q.strategy_b.timings_ms.embed_ms.toFixed(1)}ms · search ${q.strategy_b.timings_ms.search_ms.toFixed(1)}ms</div>
+          </div>
+        </div>
+      </div>`;
+    root.appendChild(card);
+  });
+}
+
+function renderRanks(arr) {
+  if (!arr.length) return '<div class="muted">no results</div>';
+  return arr.map(r => `
+    <div class="rank-item">
+      <div class="rank-head">
+        <span class="chip">#${r.rank}</span>
+        <span class="src-name">${escapeHtml(r.source)}</span>
+        <span class="src-score">sim ${r.score}</span>
+      </div>
+      <div class="muted small">${escapeHtml(r.text.slice(0,180))}…</div>
+    </div>`).join('');
+}
+
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+</script>
+{% endblock %}

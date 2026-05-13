@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Settings · {{ APP_NAME }}{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">
+  <a href="/">Home</a> <span class="material-symbols-outlined">chevron_right</span>
+  <span>Settings</span>
+</nav>
+<h1 class="page-title">Settings</h1>
+<p class="page-sub">Configuration is read from <code>.env</code> at boot. Edit it and restart to apply changes.</p>
+{% endblock %}
+
+{% block content %}
+<section class="card">
+  <header class="card-header">
+    <h3>LLM Provider</h3>
+    <span class="chip">Active: <b>{{ active.provider }}</b>{% if active.model %} · {{ active.model }}{% endif %}</span>
+  </header>
+  <div class="card-body">
+    <p class="muted">Switch providers by setting <code>LLM_PROVIDER</code> in <code>.env</code>. Used for both query expansion (Strategy B) and chat generation.</p>
+    <table class="data-table">
+      <thead>
+        <tr><th>Provider</th><th>Models</th><th>Env vars</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>mock</b> <span class="muted small">(default · satisfies PDF)</span></td>
+          <td class="mono small">mock-vertex-gemini</td>
+          <td class="mono small">—</td>
+          <td><span class="chip"><span class="status-dot on"></span>ready</span></td>
+        </tr>
+        <tr>
+          <td><b>openai</b></td>
+          <td class="mono small">gpt-4o-mini, gpt-4o, gpt-4-turbo</td>
+          <td class="mono small">OPENAI_API_KEY</td>
+          <td>
+            {% if available.openai %}
+              <span class="chip"><span class="status-dot on"></span>configured</span>
+            {% else %}
+              <span class="chip"><span class="status-dot off"></span>no key</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td><b>anthropic</b> <span class="muted small">(Claude)</span></td>
+          <td class="mono small">claude-sonnet-4-5, claude-haiku-4-5, claude-opus-4-7</td>
+          <td class="mono small">ANTHROPIC_API_KEY</td>
+          <td>
+            {% if available.anthropic %}
+              <span class="chip"><span class="status-dot on"></span>configured</span>
+            {% else %}
+              <span class="chip"><span class="status-dot off"></span>no key</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td><b>gemini</b> <span class="muted small">(Google AI)</span></td>
+          <td class="mono small">gemini-1.5-flash, gemini-1.5-pro</td>
+          <td class="mono small">GOOGLE_API_KEY</td>
+          <td>
+            {% if available.gemini %}
+              <span class="chip"><span class="status-dot on"></span>configured</span>
+            {% else %}
+              <span class="chip"><span class="status-dot off"></span>no key</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td><b>ollama</b> <span class="muted small">(local)</span></td>
+          <td class="mono small">llama3.2:3b, mistral, phi3</td>
+          <td class="mono small">OLLAMA_BASE_URL</td>
+          <td><span class="chip"><span class="status-dot on"></span>{{ cfg.ollama_base_url }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h4 class="mt">How to switch</h4>
+<pre class="code-block">
+# In .env
+LLM_PROVIDER=anthropic
+LLM_MODEL=claude-haiku-4-5-20251001
+ANTHROPIC_API_KEY=sk-ant-...
+</pre>
+    <p class="muted small">Then restart the app. The selected provider drives both Strategy B query expansion and chatbot generation. If the provider fails, the system falls back gracefully to a context-based response.</p>
+  </div>
+</section>
+
+<section class="card">
+  <header class="card-header"><h3>Embedding model</h3></header>
+  <div class="card-body">
+    <table class="data-table">
+      <tr><td><b>Model</b></td><td class="mono">{{ cfg.embedding_model }}</td></tr>
+      <tr><td><b>Dimension</b></td><td>{{ cfg.embedding_dim }}</td></tr>
+      <tr><td><b>Metric</b></td><td>{{ cfg.similarity_metric }}</td></tr>
+      <tr><td><b>Chunk size / overlap</b></td><td>{{ cfg.chunk_size }} / {{ cfg.chunk_overlap }} tokens</td></tr>
+    </table>
+    <p class="muted small mt">The embedding layer is intentionally local (per PDF). It simulates Vertex AI's <code>textembedding-gecko</code> and can be swapped for the real Vertex SDK with a single line change in <code>app/Services/embedding_service.py</code>.</p>
+  </div>
+</section>
+
+<section class="card">
+  <header class="card-header"><h3>Vector store</h3></header>
+  <div class="card-body">
+    <table class="data-table">
+      <tr><td><b>Backend</b></td><td>FAISS — <code>IndexFlatIP</code> (exact cosine via inner product on L2-normalized vectors)</td></tr>
+      <tr><td><b>Persistence</b></td><td>File-backed (faiss.index + JSON metadata)</td></tr>
+      <tr><td><b>Path</b></td><td class="mono">{{ cfg.vector_store_path }}</td></tr>
+    </table>
+    <p class="muted small mt">PDF explicitly allows: "FAISS, ChromaDB, or a simple NumPy implementation". FAISS is chosen for industry-standard performance, prebuilt wheels, and easy upgrade path to approximate indexes (<code>IndexHNSWFlat</code>, <code>IndexIVFFlat</code>) at scale. Swappable via the <code>IVectorStore</code> interface — see <code>docs/ARCHITECTURE.md</code> for the Vertex AI Matching Engine migration path.</p>
+  </div>
+</section>
+
+<section class="card">
+  <header class="card-header"><h3>Observability</h3></header>
+  <div class="card-body">
+    <div class="stat-row"><span>Langfuse</span><b>{% if LANGFUSE_ENABLED %}● Connected{% else %}○ Disabled (add keys in .env){% endif %}</b></div>
+    <div class="stat-row"><span>Host</span><span class="mono">{{ cfg.langfuse_host }}</span></div>
+  </div>
+</section>
+{% endblock %}
